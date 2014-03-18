@@ -5,14 +5,13 @@
 ## Login   <chapui_s@epitech.eu>
 ## 
 ## Started on  Sun Mar 16 13:56:23 2014 chapui_s
-## Last update Mon Mar 17 17:13:55 2014 chapui_s
+## Last update Tue Mar 18 22:49:04 2014 chapui_s
 ##
 
 NAME	= server
 
 SRC	= main.c \
-	  my_puts.c \
-	  my_atoi.c
+	  my_puts.c
 
 OBJ	= $(SRC:.c=.o)
 

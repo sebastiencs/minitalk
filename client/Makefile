@@ -5,7 +5,7 @@
 ## Login   <chapui_s@epitech.eu>
 ## 
 ## Started on  Sun Mar 16 13:56:23 2014 chapui_s
-## Last update Sun Mar 16 17:40:28 2014 chapui_s
+## Last update Tue Mar 18 22:57:45 2014 chapui_s
 ##
 
 NAME	= client
@@ -15,6 +15,8 @@ SRC	= main.c \
 	  utils.c
 
 OBJ	= $(SRC:.c=.o)
+
+CFLAGS	= -Wall -Wextra
 
 CC	= gcc
 
