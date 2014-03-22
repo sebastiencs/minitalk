@@ -5,17 +5,15 @@
 ** Login   <chapui_s@epitech.eu>
 **
 ** Started on  Sun Mar 16 14:02:32 2014 chapui_s
-** Last update Tue Mar 18 23:04:40 2014 chapui_s
+** Last update Thu Mar 20 16:24:35 2014 chapui_s
 */
 
 #include <sys/types.h>
 #include <signal.h>
 #include <unistd.h>
 #include <stdlib.h>
+#include "client.h"
 
-#include <stdio.h>
-
-char		*str;
 int		pid_server;
 
 void		get_usr1(int pid);
@@ -80,17 +78,26 @@ char		*reverse_str(char *str_to_rev)
   return (new_str);
 }
 
+int		exit_talk(void)
+{
+  my_puterror("error: kill. Maybe it's a bad PID\n");
+  exit(0);
+  return (0);
+}
+
 void		my_put_binary_pid(int nb, int pid)
 {
   if (nb >= 2)
     my_put_binary_pid(nb / 2, pid);
   if ((nb % 2))
   {
-    kill(pid, SIGUSR2);
+    if ((kill(pid, SIGUSR2)) == -1)
+      exit_talk();
   }
   else
   {
-    kill(pid, SIGUSR1);
+    if ((kill(pid, SIGUSR1)) == -1)
+      exit_talk();
   }
   usleep(1000);
 }
@@ -98,12 +105,12 @@ void		my_put_binary_pid(int nb, int pid)
 void		complete_size_bin_pid(int nb, int pid)
 {
   int		size;
-  int		i;
 
   size = get_size_bin(nb);
   while (size < 7)
   {
-    kill(pid, SIGUSR1);
+    if ((kill(pid, SIGUSR1)) == -1)
+      exit_talk();
     usleep(1000);
     size += 1;
   }
@@ -138,36 +145,38 @@ int		give_pid_to_server(int pid_client, int pid_server)
   return (0);
 }
 
-void		send_bit(void)
+int		send_bit(int is_first, char *str_to_save)
 {
+  static char	*str;
   static int	i;
 
-  if (!(*str))
-  {
-    if (i < 7)
-      kill(pid_server, SIGUSR1);
-    else
-      str = NULL;
-    i += 1;
-  }
+  if (is_first == 1)
+    str = str_to_save;
   else
   {
-    if (i == 0)
-      i = 0b1000000;
-    kill(pid_server, ((*str & i) > 0) ? (SIGUSR2) : (SIGUSR1));
-    i = i >> 1;
-    if (i <= 0)
+    if (!(*str))
     {
-      str = str + 1;
-      i = 0;
+      if (i++ < 7 && (kill(pid_server, SIGUSR2)) == -1)
+	return (exit_talk());
+      else if (i == 7)
+	(pid_server = -2);
+    }
+    else
+    {
+      (i == 0) ? (i = 0b1000000) : (0);
+      if ((kill(pid_server, ((*str & i) > 0) ? (SIGUSR2) : (SIGUSR1))) == -1)
+	return (exit_talk());
+      i = i >> 1;
+      (i <= 0) ? (str = str + 1) : (0);
     }
   }
+  return (0);
 }
 
 void		get_usr1(int pid)
 {
   (void)pid;
-  send_bit();
+  send_bit(0, NULL);
 }
 
 int		check_args(int argc, char **argv)
@@ -196,28 +205,26 @@ int		check_args(int argc, char **argv)
   return (value);
 }
 
-void		save_pid(int pid_server)
-{
-
-}
-
 int		main(int argc, char **argv)
 {
   int		pid_client;
 
   if (check_args(argc, argv) == -1)
     return (-1);
-  str = argv[2];
-  signal(SIGUSR1, get_usr1);
+  send_bit(1, argv[2]);
+  if ((signal(SIGUSR1, get_usr1)) == SIG_ERR)
+    return (my_puterror("error: signal\n"));
   pid_server = my_atoi(argv[1]);
-  save_pid(pid_server);
   pid_client = getpid();
   if ((give_pid_to_server(pid_client, pid_server)) == -1)
   {
     my_putstr("error: could not alloc\n");
     return (-1);
   }
-  while (str)
-    signal(SIGUSR1, get_usr1);
+  while (pid_server != -2)
+  {
+    if ((signal(SIGUSR1, get_usr1)) == SIG_ERR)
+      return (my_puterror("error: signal\n"));
+  }
   return (0);
 }

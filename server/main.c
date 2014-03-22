@@ -5,7 +5,7 @@
 ** Login   <chapui_s@epitech.eu>
 **
 ** Started on  Sun Mar 16 13:49:45 2014 chapui_s
-** Last update Tue Mar 18 22:44:11 2014 chapui_s
+** Last update Fri Mar 21 23:39:24 2014 chapui_s
 */
 
 #include <sys/types.h>
@@ -13,6 +13,8 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include "server.h"
+
+#include <stdio.h>
 
 int		pid_client;
 
@@ -52,13 +54,18 @@ int		save_pid_client(int nb)
   return (1);
 }
 
-void		my_print_binary(int nb)
+void		my_print_binary(char nb)
 {
   static int	is_pid;
+  static int	is_end;
 
-  if (nb == 0)
+  if (nb == 0b1111111 && pid_client != -1)
+  {
+    pid_client = -1;
     my_putchar('\n');
+  }
   if (((nb >= 32 && nb <= 126) || (nb >= 7 && nb <= 13)) && is_pid == 0)
+  /* if (nb != 0b1111111 && is_pid == 0) */
     my_putchar(nb);
   else if (nb == 0b1111111 || is_pid == 1)
     is_pid = save_pid_client(nb);
@@ -67,7 +74,7 @@ void		my_print_binary(int nb)
 static void	add_bit(char bit)
 {
   static int	i;
-  static int	nb;
+  static char	nb;
 
   nb |= bit << (6 - i);
   i += 1;
@@ -79,12 +86,19 @@ static void	add_bit(char bit)
   }
 }
 
+void		exit_server(void)
+{
+  my_putstr("error: kill\n");
+  exit(-1);
+}
+
 void		get_usr1(int sig)
 {
   (void)sig;
   add_bit(0);
   if (pid_client != -1)
-    kill(pid_client, SIGUSR1);
+    if ((kill(pid_client, SIGUSR1)) == -1)
+      exit_server();
 }
 
 void		get_usr2(int sig)
@@ -92,7 +106,8 @@ void		get_usr2(int sig)
   (void)sig;
   add_bit(1);
   if (pid_client != -1)
-    kill(pid_client, SIGUSR1);
+    if ((kill(pid_client, SIGUSR1)) == -1)
+      exit_server();
 }
 
 int		main(int argc, char **argv)
@@ -103,8 +118,10 @@ int		main(int argc, char **argv)
   (void)argv;
   disp_pid(pid = getpid());
   pid_client = -1;
-  signal(SIGUSR2, get_usr2);
-  signal(SIGUSR1, get_usr1);
+  if ((signal(SIGUSR2, get_usr2)) == SIG_ERR)
+    return (my_puterror("error: signal\n"));
+  if ((signal(SIGUSR1, get_usr1)) == SIG_ERR)
+    return (my_puterror("error: signal\n"));
   while (42)
     ;
   return (0);
